@@ -3,36 +3,30 @@ using UnityEngine;
 namespace UISystem
 {
     /// <summary>
-    /// 어느 씬에서 Play 를 눌러도 영속 영역이 서도록 만드는 진입점.
+    /// 영속 영역을 조립하는 것만 한다. 조립이 끝나면 역할이 끝나므로 상시 접근점이 아니다.
+    /// 게임 코드는 UIManager.Instance 만 본다.
     /// 부트스트랩 씬을 강제하지 않으므로 작업하던 씬에서 바로 실행할 수 있다.
     /// </summary>
-    public static class UIBootstrap
+    internal static class UIBootstrap
     {
         private const string SettingsResourcePath = "UIBootstrap";
 
-        private static UIManager _current;
-
-        /// <summary>초기화 순서가 어긋나도 죽지 않도록 접근 시점에 한 번 더 시도한다.</summary>
-        public static UIManager Current => _current ??= Create();
-
         /// <summary>
         /// 도메인 리로드를 끈 상태에서는 static 이 Play 세션 사이에 살아남는다.
-        /// 이 훅이 없으면 두 번째 실행부터 파괴된 UIManager 를 붙잡게 된다.
+        /// 이 훅이 없으면 두 번째 실행부터 파괴된 UIRoot 를 붙잡은 UIManager 를 쓰게 된다.
         /// </summary>
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()
         {
-            _current?.Dispose();
-            _current = null;
+            UIManager.Instance?.Dispose();
+            UIManager.Instance = null;
         }
 
-        /// <summary>첫 씬의 어떤 Awake 보다 먼저 돈다.</summary>
+        /// <summary>첫 씬의 어떤 Awake 보다 먼저 돈다. UIManager 를 세우는 유일한 지점이다.</summary>
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-        private static void Initialize()
-        {
-            _ = Current;
-        }
+        private static void Initialize() => UIManager.Instance = Create();
 
+        /// <summary>조립에 실패하면 사유를 로그로 남기고 null 을 돌려준다.</summary>
         private static UIManager Create()
         {
             var settings = Resources.Load<UIBootstrapSettings>(SettingsResourcePath);

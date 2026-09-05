@@ -8,6 +8,12 @@ namespace UISystem
 {
     public sealed class UIManager : IDisposable
     {
+        /// <summary>
+        /// 앱에 하나뿐인 인스턴스. UIBootstrap 이 첫 씬보다 먼저 채우고 도메인 리로드 때 되돌린다.
+        /// 조립에 실패하면 null 이고, 그 사유는 UIBootstrap 이 이미 로그로 남긴 뒤다.
+        /// </summary>
+        public static UIManager Instance { get; internal set; }
+
         private readonly IUIRootProvider _rootProvider;
         private readonly IUIPrefabProvider _prefabProvider;
         private readonly SortingOrderAllocator _allocator;
