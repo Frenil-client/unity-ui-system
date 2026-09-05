@@ -7,6 +7,7 @@ Unity 6 (uGUI) 용 UI 스택 관리 시스템.
 - **Unity** 6000.3.9f1 / **렌더 파이프라인** URP 17.3 / **입력** Input System 1.18
 - **어셈블리** `UISystem.Runtime` (`Assets/UISystem/Runtime/UISystem.Runtime.asmdef`)
 - **네임스페이스** `UISystem`
+- **전체 포트폴리오** [frenil-portfolio](https://github.com/Frenil-client/frenil-portfolio)
 
 ---
 
@@ -18,6 +19,23 @@ Unity 6 (uGUI) 용 UI 스택 관리 시스템.
 연출, 화면 전환 애니메이션, 데이터 바인딩, Addressables 연동은 아직 들어 있지 않다.
 실제로 굴려 보며 문제가 드러나는 대로 하나씩 개선해 나갈 계획이고, 그래서 지금 구조는
 **바뀔 것을 전제로 갈아 끼울 자리를 인터페이스로 뚫어 둔 상태**다.
+
+### 저장소가 추적하는 것
+
+`Assets/UISystem/Runtime/` 런타임 라이브러리와 이 README, 구조도 두 장이 전부다.
+샘플 씬과 `Resources/UIBootstrap.asset` 은 로컬에만 두고 커밋하지 않는다.
+그래서 **클론한 뒤 그냥 Play 를 눌러도 아무것도 뜨지 않는다.** 아래 [설정](#설정) 네 단계를 먼저 밟아야 한다.
+
+### 아직 없는 것
+
+굴려 보기 전에 이미 알고 있는 구멍이라 적어 둔다. 위에서부터 손댈 순서다.
+
+| 빠진 것 | 지금 상태 |
+| --- | --- |
+| 테스트 | 없다. `SortingOrderAllocator` 는 씬 없이 검증되는 순수 C# 이라 여기가 첫 자리다 |
+| 무결성 검사 툴 | 아래 [규약](#규약)이 전부 수동이다. 어겨도 실행해 봐야 안다 |
+| `UIToast` 자동 소멸 | 지속 시간도 타이머도 없다. 지금은 호출부가 직접 `Close` 해야 한다 |
+| 열기 취소 되감기 | `PlayOpenAsync` 도중 취소되면 예외는 나가지만 뷰는 스택에 남는다 |
 
 ---
 
@@ -46,7 +64,7 @@ Unity 6 (uGUI) 용 UI 스택 관리 시스템.
 | `UIPopup` | Popup (2) | **✓** | ✗ | 모달. 확인창, 결과창 |
 | `UIOverlay` | Overlay (3) | **✓** | ✗ | 시스템 층. 로딩, 튜토리얼 마스크 |
 | `UIToast` | Toast (4) | ✗ | ✗ | 최상단 알림. 입력을 통과시킨다 |
-| `UIElement` | — | — | — | 스택에 참여하지 않는 부품(슬롯, 게이지) |
+| `UIElement` | — | — | — | 스택에 참여하지 않는 부품(슬롯, 게이지). 유일하게 `UIBase` 를 상속하지 않는다 |
 
 `UIScreen` 만 특별하다. **UIRoot 로 옮기지 않고 씬에 놓인 채로 추적만 한다.**
 옮기면 루트 캔버스가 서브캔버스로 강등되면서 드리븐 RectTransform 이 풀리고 자기 `CanvasScaler` 가 죽는다.
@@ -198,7 +216,7 @@ Assets/UISystem/Runtime/
 
 ## 사용법
 
-접근점은 `UIManager.Instance` 하나다.
+접근점은 `UIManager.Instance` 하나다. 아래 예제에서 `manager` 로 줄여 쓴 것도 그것을 받아 둔 지역 변수다.
 
 ### 열기
 
@@ -265,7 +283,8 @@ public sealed class ConfirmPopup : UIPopup
     // 위에 다른 UI가 덮이거나 걷혔을 때. 가려진 동안 갱신을 멈추는 용도.
     protected override void OnCoveredChanged(bool covered) { }
 
-    // 연출. null 을 반환하면 즉시 진행한다.
+    // 연출. 베이스는 null 을 반환하고, null 이면 매니저가 기다리지 않고 즉시 진행한다.
+    // FadeInAsync 는 이 뷰가 직접 구현한 것이다. 시스템이 주는 연출은 아직 없다.
     protected override Awaitable PlayOpenAsync(CancellationToken token) => FadeInAsync(token);
 }
 ```
