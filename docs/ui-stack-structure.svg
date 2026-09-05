@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600" width="900" height="600" font-family="'Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR',system-ui,sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4a5b6d"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="900" height="600" fill="#ffffff"/>
+
+  <!-- title -->
+  <text x="40" y="38" font-size="19" font-weight="700" fill="#17202b">UI Stack System — 런타임 구조</text>
+  <text x="40" y="60" font-size="12.5" fill="#637182">UIManager 는 앱에 하나. 레이어 캔버스와 Dim 은 영속 루트에, UIScreen 만 씬에 남는다.</text>
+
+  <!-- manager -->
+  <rect x="290" y="82" width="320" height="56" rx="9" fill="#22303f"/>
+  <text x="450" y="108" font-size="15.5" font-weight="700" fill="#ffffff" text-anchor="middle">UIManager.Instance</text>
+  <text x="450" y="127" font-size="11" fill="#9fb0c2" text-anchor="middle">스택 · 정렬 순서 · 가림 계산 · 수명 관리</text>
+
+  <line x1="450" y1="138" x2="450" y2="184" stroke="#4a5b6d" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <text x="466" y="160" font-size="11" fill="#637182">다섯 레이어를 하나의 스택으로 관리한다</text>
+  <text x="610" y="182" font-size="10.5" fill="#8a97a6" text-anchor="end">sortingOrder 높을수록 화면 위</text>
+
+  <!-- layer bars -->
+  <rect x="290" y="190" width="320" height="44" rx="7" fill="#eaf1fd" stroke="#6f93d0"/>
+  <text x="308" y="217" font-size="13.5" font-weight="700" fill="#2f4a78">Toast</text>
+  <text x="592" y="217" font-size="11.5" fill="#5b7bb4" text-anchor="end">base 4000</text>
+
+  <rect x="290" y="244" width="320" height="44" rx="7" fill="#e9f4ee" stroke="#6ba98d"/>
+  <text x="308" y="271" font-size="13.5" font-weight="700" fill="#2c5b45">Overlay</text>
+  <text x="592" y="271" font-size="11.5" fill="#579079" text-anchor="end">base 3000</text>
+
+  <rect x="290" y="298" width="320" height="44" rx="7" fill="#fdeeeb" stroke="#d38b7e"/>
+  <text x="308" y="325" font-size="13.5" font-weight="700" fill="#7d3729">Popup</text>
+  <text x="592" y="325" font-size="11.5" fill="#b1705f" text-anchor="end">base 2000</text>
+
+  <rect x="290" y="352" width="320" height="44" rx="7" fill="#f3eefa" stroke="#9c88bf"/>
+  <text x="308" y="379" font-size="13.5" font-weight="700" fill="#4a3670">Window</text>
+  <text x="592" y="379" font-size="11.5" fill="#7d68a5" text-anchor="end">base 1000</text>
+
+  <rect x="290" y="424" width="320" height="44" rx="7" fill="#f2f6e8" stroke="#93a66b" stroke-dasharray="5 3"/>
+  <text x="308" y="451" font-size="13.5" font-weight="700" fill="#455227">Screen</text>
+  <text x="592" y="451" font-size="11.5" fill="#7a8a53" text-anchor="end">base 0</text>
+
+  <!-- brackets -->
+  <path d="M282,190 H272 V396 H282" fill="none" stroke="#97a5b5" stroke-width="1.4"/>
+  <text x="262" y="272" font-size="12" font-weight="700" fill="#46586e" text-anchor="end">DontDestroyOnLoad</text>
+  <text x="262" y="290" font-size="11" fill="#637182" text-anchor="end">UIRoot 아래 레이어 캔버스</text>
+  <text x="262" y="308" font-size="11" fill="#637182" text-anchor="end">씬이 바뀌어도 남는다</text>
+
+  <path d="M282,424 H272 V468 H282" fill="none" stroke="#93a66b" stroke-width="1.4"/>
+  <text x="262" y="438" font-size="12" font-weight="700" fill="#556327" text-anchor="end">현재 씬</text>
+  <text x="262" y="456" font-size="11" fill="#637182" text-anchor="end">전환하면 통째로 교체된다</text>
+
+  <!-- right annotations -->
+  <text x="626" y="217" font-size="11" fill="#637182">입력을 통과시킨다</text>
+  <text x="626" y="271" font-size="11" fill="#637182">Dim · 뒤로가기로 안 닫힌다</text>
+  <text x="626" y="325" font-size="11" fill="#637182">Dim · 흘려 닫기로 닫힌다</text>
+  <text x="626" y="379" font-size="11" fill="#637182">아래 캔버스를 끈다</text>
+  <text x="626" y="440" font-size="11" fill="#637182">UIRoot 로 옮기지 않는다</text>
+  <text x="626" y="456" font-size="10" fill="#8a97a6">루트 캔버스인 채로 자기 CanvasScaler 사용</text>
+
+  <!-- notes -->
+  <line x1="40" y1="496" x2="860" y2="496" stroke="#e3e8ee" stroke-width="1"/>
+  <text x="40" y="520" font-size="11.5" fill="#55636f">• UIDim 은 앱에 하나. 최상단 모달 바로 아래 칸에 들어가 입력을 막는다.</text>
+  <text x="40" y="542" font-size="11.5" fill="#55636f">• 씬이 로드되면 자동 편입, 언로드되면 스택에서 빼고 정렬 구간을 반납한다.</text>
+  <text x="40" y="564" font-size="11.5" fill="#55636f">• 어느 씬에서 Play 해도 영속 영역이 선다. 부트스트랩 씬이 필요 없다.</text>
+</svg>

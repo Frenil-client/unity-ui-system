@@ -23,31 +23,7 @@ Unity 6 (uGUI) 용 UI 스택 관리 시스템.
 
 ## 전체 구조
 
-```mermaid
-graph TD
-    UM["UIManager.Instance<br/>스택 · 정렬 순서 · 수명 관리"]
-
-    subgraph persist["DontDestroyOnLoad — 씬이 바뀌어도 남는다"]
-        R["UIRoot"]
-        WC["Window Canvas · base 1000"]
-        PC["Popup Canvas · base 2000"]
-        OC["Overlay Canvas · base 3000"]
-        TC["Toast Canvas · base 4000"]
-        DM["UIDim · 앱에 하나뿐"]
-        R --> WC
-        R --> PC
-        R --> OC
-        R --> TC
-        R --> DM
-    end
-
-    subgraph scene["현재 씬 — 전환하면 통째로 교체된다"]
-        SC["UIScreen · base 0"]
-    end
-
-    UM -->|"프리팹에서 연 뷰를 여기 붙인다"| R
-    UM -.->|"옮기지 않고 추적만 한다"| SC
-```
+![UI Stack System 런타임 구조](docs/ui-stack-structure.svg)
 
 `UIManager` 는 앱에 하나이고 씬보다 오래 산다.
 레이어 캔버스와 Dim 은 영속 루트에 있고, `UIScreen` 만 씬에 남는다.
@@ -124,30 +100,33 @@ UI 가 열리거나 닫힐 때마다 스택을 **위에서부터** 훑으며 가
 
 ### 4. 씬 전환과 소유권
 
-영속 매니저가 씬의 UI 를 붙잡고 있으면 누수가 된다.
-그래서 **뷰마다 소유 씬을 기록**하고, `SceneManager` 이벤트 두 개로 전부 정리한다.
+`UIManager` 는 씬보다 오래 산다. 씬이 내려갔는데 그 씬의 UI 를 스택이 붙잡고 있으면 곧장 누수가 된다.
+그래서 **뷰마다 소유 씬을 기록**해 두고, `SceneManager` 이벤트 두 개로 전부 정리한다.
 
-```mermaid
-sequenceDiagram
-    participant G as 게임 코드
-    participant SM as SceneManager
-    participant M as UIManager
+![씬 전환 시 스택 처리](docs/ui-scene-transition.svg)
 
-    G->>SM: LoadScene("Battle")
-    SM-->>M: sceneUnloaded(Lobby)
-    Note over M: Lobby 소유 뷰를 스택에서 제거<br/>정렬 구간 반납 · 파괴된 참조도 함께 정리
-    SM-->>M: sceneLoaded(Battle)
-    Note over M: 씬의 UIBase 를 전부 스캔<br/>저작 순서대로 Adopt
-    Note over G,M: 스택은 Battle 기준으로 재구성 완료<br/>게임 코드는 아무것도 하지 않았다
-```
+**소유 씬은 이렇게 정해진다.** 씬에 미리 배치되어 입양된 뷰는 자기가 놓여 있던 씬,
+프리팹에서 열린 뷰는 `OpenAsync` 를 부른 시점의 활성 씬이 주인이다.
+그래서 로비에서 연 상점 창은 로비가 내려갈 때 함께 정리된다.
 
-- **`sceneLoaded`** — 그 씬에 배치된 `UIBase` 를 찾아 자동으로 스택에 편입한다.
-  씬마다 등록용 컴포넌트를 따로 붙일 필요가 없다. 잊고 안 붙여서 조용히 깨지는 일도 없다.
-- **`sceneUnloaded`** — 그 씬이 소유하던 뷰를 스택에서 빼고 정렬 구간을 반납한다.
-  영속 매니저의 **유일한 누수 방어선**이다.
+- **`sceneLoaded`** — 그 씬에 배치된 `UIBase` 를 전부 찾아 자동으로 스택에 편입한다.
+  씬마다 등록용 컴포넌트를 따로 붙일 필요가 없고, 잊고 안 붙여서 조용히 깨지는 일도 없다.
+  디자이너가 저작한 `Canvas.sortingOrder` 순서를 유지한 채 아래에서부터 넣는다.
+- **`sceneUnloaded`** — 그 씬이 소유하던 뷰를 스택에서 빼고 **정렬 구간을 반납**한다.
+  구간을 돌려받지 못하면 레이어 용량이 계속 줄어들기 때문에, 이 훅이 영속 매니저의 **유일한 누수 방어선**이다.
+  이 시점에 Unity 가 이미 파괴해 fake-null 이 된 참조도 함께 걷어낸다.
 
-씬에 배치되어 입양된 뷰는 닫아도 파괴하거나 풀에 넣지 않고 비활성화만 한다.
-프리팹에서 태어난 뷰는 `Options.Pooled` 면 타입별 풀로, 아니면 파괴된다.
+걷어낸 뷰의 처분은 출신에 따라 갈린다.
+
+| 출신 | 닫을 때 | 소유 씬이 내려갈 때 |
+| --- | --- | --- |
+| 씬에 배치되어 입양됨 (`IsSceneOwned`) | 비활성화만 한다 | 주인이 사라졌으므로 파괴한다 |
+| 프리팹에서 열림 · `Pooled` | 타입별 풀로 반납 | 풀로 반납 |
+| 프리팹에서 열림 · 그 외 | 파괴 | 파괴 |
+
+`LoadSceneMode.Additive` 로 겹쳐 올린 씬을 내릴 때도 판단 기준은 같다.
+그 씬이 소유한 것만 빠지고 아래 씬의 UI 는 건드리지 않는다.
+정리가 끝나면 가림 상태를 다시 계산하므로, 위가 걷힌 자리의 UI 가 알아서 다시 보인다.
 
 ### 5. 어느 씬에서 실행해도 똑같이 동작한다
 
