@@ -76,10 +76,16 @@ publish/
 !/[Pp]ackages/**/*.dylib
 !/[Pp]ackages/**/*.a
 
+# 샘플 씬과 테스트 하네스 - 커밋에서 제외. 포함할 때 이 블록을 지운다
+Assets/UISystem/Samples/
+Assets/UISystem/Samples.meta
+Assets/Resources/
+Assets/Resources.meta
+
 # Markdown — README 와 README 가 링크하는 문서만 추적한다
 *.md
 !README.md
-!**/[Dd]ocumentation/*.md
+!Assets/UISystem/Documentation/*.md
 
 # OS
 .DS_Store
