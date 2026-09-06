@@ -4,9 +4,11 @@ Unity 6 (uGUI) 용 UI 스택 관리 시스템.
 레이어 캔버스 · 정렬 순서 자동 배정 · 씬 소유권 기반 수명 관리를 한 덩어리로 묶어,
 게임 코드가 `UIManager.Instance.OpenAsync<T>()` 한 줄만 알면 되도록 만든 런타임이다.
 
-- **Unity** 6000.3.9f1 / **렌더 파이프라인** URP 17.3 / **입력** Input System 1.18
-- **어셈블리** `UISystem.Runtime` (`Assets/UISystem/Runtime/UISystem.Runtime.asmdef`)
-- **네임스페이스** `UISystem`
+- **패키지** `com.frenil.uisystem` · 어셈블리 `UISystem.Runtime` · 네임스페이스 `UISystem`
+  git URL 로 설치한다. 아래 [설치](#설치) 참고.
+- **요구사항** Unity 6000.3 이상, `com.unity.ugui` 2.0.0. 패키지 의존은 이 하나뿐이다
+- **개발 환경** 이 저장소의 샘플 프로젝트는 URP 17.3 과 Input System 1.18 위에서 돌지만,
+  런타임이 참조하는 것은 `UnityEngine` 과 `UnityEngine.UI` 뿐이라 소비 프로젝트가 둘을 쓸 필요는 없다
 - **전체 포트폴리오** [frenil-portfolio](https://github.com/Frenil-client/frenil-portfolio)
 
 ---
@@ -17,8 +19,18 @@ Unity 6 (uGUI) 용 UI 스택 관리 시스템.
 스택 관리, 레이어 분리, 정렬 순서 배정, 씬 전환에 걸친 수명 관리 — 여기까지의 뼈대를 잡았다.
 
 연출, 화면 전환 애니메이션, 데이터 바인딩, Addressables 연동은 아직 들어 있지 않다.
-실제로 굴려 보며 문제가 드러나는 대로 하나씩 개선해 나갈 계획이고, 그래서 지금 구조는
+굴려 보며 문제가 드러나는 대로 하나씩 개선하는 중이고, 그래서 지금 구조는
 **바뀔 것을 전제로 갈아 끼울 자리를 인터페이스로 뚫어 둔 상태**다.
+
+### 실제 사용처
+
+v0.1.0 을 [DefenceGame](https://github.com/Frenil-client/DefenceGame) 에 git URL 로 설치해,
+그 프로젝트가 갖고 있던 자체 UI 매니저를 걷어내고 이 패키지로 교체했다.
+문자열 id 로 팝업을 열던 코드가 `OpenAsync<T>()` 로 바뀌었고, 팝업마다 깔던 반투명 backdrop 은
+공유 `UIDim` 하나로 대체됐다. 씬의 주 화면이 `UIScreen`, HUD 부품이 `UIElement`, 팝업 3종이 `UIPopup` 이다.
+
+이 이식이 아래 [아직 없는 것](#아직-없는-것) 의 마지막 세 줄을 만들어 냈다.
+샘플 안에서는 드러나지 않던 것들이라, 실사용 한 번이 샘플 여러 개보다 낫다는 근거로 함께 남겨 둔다.
 
 ### 패키지로 나가는 것과 저장소에만 있는 것
 
@@ -38,14 +50,19 @@ git URL 패키지는 `?path=` 로 지정한 폴더를 통째로 복사하는 방
 
 ### 아직 없는 것
 
-굴려 보기 전에 이미 알고 있는 구멍이라 적어 둔다. 위에서부터 손댈 순서다.
+알고 있는 구멍을 적어 둔다. 위에서부터 손댈 순서다.
+마지막 세 줄은 DefenceGame 이식에서 드러난 것이고, 나머지는 처음부터 비워 둔 자리다.
 
 | 빠진 것 | 지금 상태 |
 | --- | --- |
 | 테스트 | 없다. `SortingOrderAllocator` 는 씬 없이 검증되는 순수 C# 이라 여기가 첫 자리다 |
+| CI | 없다. 테스트가 생기면 Unity 라이선스 없이 도는 워크플로를 붙인다 |
 | 무결성 검사 툴 | 아래 [규약](#규약)이 전부 수동이다. 어겨도 실행해 봐야 안다 |
 | `UIToast` 자동 소멸 | 지속 시간도 타이머도 없다. 지금은 호출부가 직접 `Close` 해야 한다 |
 | 열기 취소 되감기 | `PlayOpenAsync` 도중 취소되면 예외는 나가지만 뷰는 스택에 남는다 |
+| `Close` 를 UnityEvent 에 못 문다 | `Close(UICloseReason reason = Dismissed)` 는 선택 인자가 있어 `UnityAction` 으로 변환되지 않는다. 닫기 버튼을 인스펙터에서 물리려면 뷰마다 인자 없는 래퍼를 하나씩 둬야 한다 |
+| `CloseAllAsync()` 가 화면까지 닫는다 | 인자 없는 버전은 스택 바닥의 `UIScreen` 도 대상이다. 팝업만 정리하려면 `CloseAllAsync<UIPopup>()` 를 써야 하는데 이름이 그 구분을 드러내지 않아, 모르고 쓰면 HUD 가 통째로 사라진다 |
+| 세로 기본값 | `UILayerSettings` 의 기본 레퍼런스 해상도가 1080x1920 이다. 가로 게임은 반드시 덮어써야 하고, 씬에 남는 `UIScreen` 의 `CanvasScaler` 와 어긋나면 배율이 갈라진다 |
 
 ---
 
@@ -221,11 +238,16 @@ Assets/
 
 ## 설치
 
+**요구사항** Unity 6000.3 이상. 패키지 의존은 `com.unity.ugui` 2.0.0 하나뿐이다.
+
 소비 프로젝트의 `Packages/manifest.json` 에 추가한다.
 
 ```json
 "com.frenil.uisystem": "https://github.com/Frenil-client/unity-ui-system.git?path=/Assets/UISystem#v0.1.0"
 ```
+
+에디터에서는 **Window ▸ Package Manager ▸ + ▸ Add package from git URL** 에 같은 URL 을 넣어도 된다.
+`?path=/Assets/UISystem` 이 패키지 루트를 가리키므로 이 부분을 빼면 저장소 전체를 받으려다 실패한다.
 
 `#v0.1.0` 이 물린 버전이고, Unity 가 해석한 커밋 해시는 `Packages/packages-lock.json` 에 기록된다.
 그 두 파일을 커밋해 두면 "이 프로젝트가 UI 시스템 어느 버전을 쓰는가"가 이력으로 남는다.
