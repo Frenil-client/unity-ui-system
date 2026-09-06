@@ -20,11 +20,21 @@ Unity 6 (uGUI) 용 UI 스택 관리 시스템.
 실제로 굴려 보며 문제가 드러나는 대로 하나씩 개선해 나갈 계획이고, 그래서 지금 구조는
 **바뀔 것을 전제로 갈아 끼울 자리를 인터페이스로 뚫어 둔 상태**다.
 
-### 저장소가 추적하는 것
+### 패키지로 나가는 것과 저장소에만 있는 것
 
-`Assets/UISystem/Runtime/` 런타임 라이브러리와 이 README, 구조도 두 장이 전부다.
-샘플 씬과 `Resources/UIBootstrap.asset` 은 로컬에만 두고 커밋하지 않는다.
-그래서 **클론한 뒤 그냥 Play 를 눌러도 아무것도 뜨지 않는다.** 아래 [설정](#설정) 네 단계를 먼저 밟아야 한다.
+`Assets/UISystem/` 이 UPM 패키지 루트다. **소비 프로젝트가 받는 것은 이 폴더뿐이다.**
+
+| | 저장소 | 패키지 |
+| --- | --- | --- |
+| `Assets/UISystem/` — 런타임 · `package.json` · `CHANGELOG.md` | ✓ | ✓ |
+| `Assets/Samples/` — 샘플 씬 · 프리팹 · 테스트 하네스 | ✓ | ✗ |
+| `Assets/Resources/UIBootstrap.asset` — 이 프로젝트의 부팅 설정 | ✓ | ✗ |
+| `docs/` — 구조도 | ✓ | ✗ |
+
+git URL 패키지는 `?path=` 로 지정한 폴더를 통째로 복사하는 방식이라 파일 단위 제외 수단이 없다.
+그래서 **전달하지 않을 것은 패키지 루트 밖에 둔다.** 샘플이 `Assets/UISystem/` 이 아니라 `Assets/Samples/` 에 있는 이유다.
+
+클론하면 샘플과 부팅 설정이 함께 딸려오므로 `SampleLobby` 씬을 열고 바로 Play 할 수 있다.
 
 ### 아직 없는 것
 
@@ -175,28 +185,59 @@ BeforeSceneLoad        ─→  UIBootstrap.Create()  →  UIManager.Instance
 ## 폴더 구조
 
 ```
-Assets/UISystem/Runtime/
-├─ Core/
-│  ├─ UIBootstrap.cs           # (internal) 조립 전담. 어느 씬에서 Play 해도 영속 영역을 세운다
-│  ├─ UIBootstrapSettings.cs   # RootPrefab / Layers / PrefabProvider 참조
-│  ├─ UIManager.cs             # 스택, 열기/닫기, 가림 계산, 씬 훅, 풀링. 접근점 UIManager.Instance
-│  ├─ SortingOrderAllocator.cs # 레이어별 정렬 구간 예약/반납
-│  ├─ UILayerSettings.cs       # 레이어 정의 + 공통 스케일 설정
-│  ├─ UIRoot.cs / UIRootProvider.cs
-│  ├─ UIPrefabTable.cs         # 기본 프리팹 공급원 (타입 ↔ 프리팹 직접 참조)
-│  ├─ IUIPrefabProvider.cs / IUIRootProvider.cs
-│  └─ UITypes.cs               # UILayerId, UIViewOptions, UICloseReason, UIResult
-└─ Views/
-   ├─ UIBase.cs                # 스택에 참여하는 모든 UI의 베이스
-   ├─ UIScreen / UIWindow / UIPopup / UIOverlay / UIToast / UIElement
-   └─ UIDim.cs                 # 공유 반투명 판
+Assets/
+├─ UISystem/                      ← 패키지 루트. 여기까지가 소비 프로젝트로 나간다
+│  ├─ package.json
+│  ├─ CHANGELOG.md
+│  └─ Runtime/                    · asmdef: UISystem.Runtime
+│     ├─ Core/
+│     │  ├─ UIBootstrap.cs           # (internal) 조립 전담. 어느 씬에서 Play 해도 영속 영역을 세운다
+│     │  ├─ UIBootstrapSettings.cs   # RootPrefab / Layers / PrefabProvider 참조
+│     │  ├─ UIManager.cs             # 스택, 열기/닫기, 가림 계산, 씬 훅, 풀링. 접근점 UIManager.Instance
+│     │  ├─ SortingOrderAllocator.cs # 레이어별 정렬 구간 예약/반납
+│     │  ├─ UILayerSettings.cs       # 레이어 정의 + 공통 스케일 설정
+│     │  ├─ UIRoot.cs / UIRootProvider.cs
+│     │  ├─ UIPrefabTable.cs         # 기본 프리팹 공급원 (타입 ↔ 프리팹 직접 참조)
+│     │  ├─ IUIPrefabProvider.cs / IUIRootProvider.cs
+│     │  └─ UITypes.cs               # UILayerId, UIViewOptions, UICloseReason, UIResult
+│     └─ Views/
+│        ├─ UIBase.cs                # 스택에 참여하는 모든 UI의 베이스
+│        ├─ UIScreen / UIWindow / UIPopup / UIOverlay / UIToast / UIElement
+│        └─ UIDim.cs                 # 공유 반투명 판
+├─ Samples/                       ← 패키지 밖. 저장소에만 있다
+│  ├─ Runtime/                    · asmdef: UISystem.Samples → UISystem.Runtime 참조
+│  ├─ Editor/                     · asmdef: UISystem.Samples.Editor (씬·에셋 생성 메뉴)
+│  ├─ Scene/                      # SampleLobby, SampleBattle
+│  └─ Generated/                  # UIRoot 프리팹, 레이어 설정, 확인 팝업
+└─ Resources/
+   └─ UIBootstrap.asset           # 이 프로젝트의 부팅 설정. 패키지에 포함되지 않는다
 ```
+
+샘플이 자체 asmdef를 갖고 `UISystem.Runtime` 을 명시적으로 참조한다.
+`Assembly-CSharp` 의 자동 참조에 기대지 않으므로, 소비 프로젝트가 패키지를 물었을 때 겪을
+어셈블리 참조 상황이 이 저장소 안에서 그대로 재현된다.
+
+---
+
+## 설치
+
+소비 프로젝트의 `Packages/manifest.json` 에 추가한다.
+
+```json
+"com.frenil.uisystem": "https://github.com/Frenil-client/unity-ui-system.git?path=/Assets/UISystem#v0.1.0"
+```
+
+`#v0.1.0` 이 물린 버전이고, Unity 가 해석한 커밋 해시는 `Packages/packages-lock.json` 에 기록된다.
+그 두 파일을 커밋해 두면 "이 프로젝트가 UI 시스템 어느 버전을 쓰는가"가 이력으로 남는다.
 
 ---
 
 ## 설정
 
-라이브러리가 뜨려면 에셋 네 가지가 있어야 한다. 프로젝트당 한 번만 만들면 된다.
+패키지에는 런타임만 들어 있다. 뜨려면 에셋 네 가지를 프로젝트에 만들어야 한다.
+이 저장소를 클론한 경우 `Assets/Samples/` 와 `Assets/Resources/UIBootstrap.asset` 이 이미 있으므로
+`SampleLobby` 씬을 열고 바로 Play 하면 되고, 아래는 자기 프로젝트에 붙일 때의 절차다.
+(에디터 메뉴 **UI System ▸ Samples ▸ 샘플 씬과 에셋 생성** 으로 한 벌 만들어 참고해도 된다.)
 
 1. **레이어 설정** — `Create ▸ UI System ▸ UI Layer Settings`
    기본값이 `Screen / Window / Popup / Overlay / Toast` 다섯 개로 채워져 있다.
