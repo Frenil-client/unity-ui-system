@@ -98,8 +98,12 @@ while IFS= read -r d; do
   [ -e "$d.meta" ] || { fail "폴더 meta 없음: $d"; missing=$((missing + 1)); }
 done < <(while IFS= read -r f; do dirname "$f"; done < <(git ls-files Assets) | sort -u)
 
+# git 은 빈 폴더를 추적하지 않는다. 그래서 내용이 빈 폴더의 meta 는 클론한 곳에서
+# 짝을 잃는다. 로컬에는 폴더가 남아 있어 눈에 안 띄므로 CI 에서만 드러난다.
 while IFS= read -r m; do
-  [ -e "${m%.meta}" ] || { fail "고아 meta: $m"; orphan=$((orphan + 1)); }
+  [ -e "${m%.meta}" ] && continue
+  fail "고아 meta: $m  (짝이 되는 파일·폴더가 없다. 빈 폴더라면 meta 를 지울 것)"
+  orphan=$((orphan + 1))
 done < <(git ls-files Assets | grep '\.meta$')
 
 [ "$missing" -eq 0 ] && pass "모든 에셋과 폴더에 meta 가 있다"
