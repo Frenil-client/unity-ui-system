@@ -61,7 +61,19 @@ namespace UISystem
 
             var animation = view.PlayOpenAsync(cancellationToken);
             if (animation != null)
-                await animation;
+            {
+                try
+                {
+                    await animation;
+                }
+                catch
+                {
+                    // 연출 도중 취소되거나 실패하면 열린 적이 없던 상태로 되돌린다.
+                    // 되감지 않으면 화면에 없는 뷰가 스택과 정렬 구간을 계속 붙잡는다.
+                    DetachAndRelease(view, UICloseReason.ClosedByService);
+                    throw;
+                }
+            }
 
             return (T)view;
         }
@@ -141,6 +153,15 @@ namespace UISystem
             if (animation != null)
                 await animation;
 
+            DetachAndRelease(view, reason);
+        }
+
+        /// <summary>
+        /// 스택에서 빼고 정렬 구간을 반납한 뒤 처분한다.
+        /// 정상적으로 닫을 때와 열기가 도중에 엎어졌을 때가 같은 뒷정리를 쓴다.
+        /// </summary>
+        private void DetachAndRelease(UIBase view, UICloseReason reason)
+        {
             _stack.Remove(view);
             _closing.Remove(view);
             _allocator.Release(view.OrderBlock);
@@ -151,9 +172,14 @@ namespace UISystem
             Release(view);
         }
 
-        public Awaitable CloseAllAsync<T>() where T : UIBase => CloseWhereAsync(v => v is T);
+        /// <summary>지정한 타입만 닫는다. T 를 UIScreen 으로 주면 화면도 닫힌다. 그건 명시적 요청이므로 그대로 따른다.</summary>
+        public Awaitable CloseAllAsync<T>() where T : UIBase => CloseWhereAsync(static v => v is T);
 
-        public Awaitable CloseAllAsync() => CloseWhereAsync(null);
+        /// <summary>
+        /// 스택을 비우되 UIScreen 은 남긴다. 화면은 씬이 소유하는 바닥이라 씬이 살아 있는 한 닫을 대상이 아니다.
+        /// 화면까지 걷어내는 것은 씬 언로드와 Reset 의 일이다.
+        /// </summary>
+        public Awaitable CloseAllAsync() => CloseWhereAsync(static v => v is not UIScreen);
 
         public bool TryGetTop(out UIBase view)
         {
@@ -263,7 +289,7 @@ namespace UISystem
             for (var i = _stack.Count - 1; i >= 0; i--)
             {
                 var view = _stack[i];
-                if (filter == null || filter(view))
+                if (filter(view))
                     targets.Add(view);
             }
 

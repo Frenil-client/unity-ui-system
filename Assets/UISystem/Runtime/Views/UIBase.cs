@@ -61,13 +61,24 @@ namespace UISystem
             return _closeSource.Awaitable;
         }
 
-        public void Close(UICloseReason reason = UICloseReason.Dismissed)
+        public void Close(UICloseReason reason)
         {
             if (!IsOpen)
                 return;
 
             _ = _service?.CloseAsync(this, reason);
         }
+
+        // 아래 셋은 인스펙터의 UnityEvent 에 그대로 물리기 위한 것이다.
+        // UnityEvent 는 선택 인자가 있는 메서드도, 열거형을 받는 메서드도 목록에 올리지 않는다.
+        // 그래서 Close 에 기본값을 두는 대신 인자 없는 진입점을 이름으로 나눠 둔다.
+
+        /// <summary>흘려 닫기. 닫기 버튼과 뒤로가기가 쓰는 기본 경로다.</summary>
+        public void Close() => Close(UICloseReason.Dismissed);
+
+        public void CloseConfirmed() => Close(UICloseReason.Confirmed);
+
+        public void CloseCancelled() => Close(UICloseReason.Cancelled);
 
         protected virtual void OnOpened() { }
 

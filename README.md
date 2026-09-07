@@ -5,11 +5,11 @@ Unity 6 (uGUI) 용 UI 스택 관리 시스템.
 게임 코드가 `UIManager.Instance.OpenAsync<T>()` 한 줄만 알면 되도록 만든 런타임이다.
 
 - **패키지** `com.frenil.uisystem` · 어셈블리 `UISystem.Runtime` · 네임스페이스 `UISystem`
-  git URL 로 설치한다. 아래 [설치](#설치) 참고.
-- **요구사항** Unity 6000.3 이상, `com.unity.ugui` 2.0.0. 패키지 의존은 이 하나뿐이다
-- **개발 환경** 이 저장소의 샘플 프로젝트는 URP 17.3 과 Input System 1.18 위에서 돌지만,
-  런타임이 참조하는 것은 `UnityEngine` 과 `UnityEngine.UI` 뿐이라 소비 프로젝트가 둘을 쓸 필요는 없다
+- **요구사항** Unity 6000.3 이상. 의존은 `com.unity.ugui` 2.0.0 하나뿐이다
 - **전체 포트폴리오** [frenil-portfolio](https://github.com/Frenil-client/frenil-portfolio)
+
+[동작 방식](#동작-방식) · [설치](#설치) · [설정](#설정) · [사용법](#사용법) ·
+[다음에 할 것](#다음에-할-것) · [확장 포인트](#확장-포인트) · [규약](#규약) · [저장소 구조와 개발](#저장소-구조와-개발)
 
 ---
 
@@ -28,41 +28,6 @@ v0.1.0 을 [DefenceGame](https://github.com/Frenil-client/DefenceGame) 에 git U
 그 프로젝트가 갖고 있던 자체 UI 매니저를 걷어내고 이 패키지로 교체했다.
 문자열 id 로 팝업을 열던 코드가 `OpenAsync<T>()` 로 바뀌었고, 팝업마다 깔던 반투명 backdrop 은
 공유 `UIDim` 하나로 대체됐다. 씬의 주 화면이 `UIScreen`, HUD 부품이 `UIElement`, 팝업 3종이 `UIPopup` 이다.
-
-이 이식이 아래 [아직 없는 것](#아직-없는-것) 의 마지막 세 줄을 만들어 냈다.
-샘플 안에서는 드러나지 않던 것들이라, 실사용 한 번이 샘플 여러 개보다 낫다는 근거로 함께 남겨 둔다.
-
-### 패키지로 나가는 것과 저장소에만 있는 것
-
-`Assets/UISystem/` 이 UPM 패키지 루트다. **소비 프로젝트가 받는 것은 이 폴더뿐이다.**
-
-| | 저장소 | 패키지 |
-| --- | --- | --- |
-| `Assets/UISystem/` — 런타임 · `package.json` · `CHANGELOG.md` | ✓ | ✓ |
-| `Assets/Samples/` — 샘플 씬 · 프리팹 · 테스트 하네스 | ✓ | ✗ |
-| `Assets/Resources/UIBootstrap.asset` — 이 프로젝트의 부팅 설정 | ✓ | ✗ |
-| `docs/` — 구조도 | ✓ | ✗ |
-
-git URL 패키지는 `?path=` 로 지정한 폴더를 통째로 복사하는 방식이라 파일 단위 제외 수단이 없다.
-그래서 **전달하지 않을 것은 패키지 루트 밖에 둔다.** 샘플이 `Assets/UISystem/` 이 아니라 `Assets/Samples/` 에 있는 이유다.
-
-클론하면 샘플과 부팅 설정이 함께 딸려오므로 `SampleLobby` 씬을 열고 바로 Play 할 수 있다.
-
-### 아직 없는 것
-
-알고 있는 구멍을 적어 둔다. 위에서부터 손댈 순서다.
-마지막 세 줄은 DefenceGame 이식에서 드러난 것이고, 나머지는 처음부터 비워 둔 자리다.
-
-| 빠진 것 | 지금 상태 |
-| --- | --- |
-| 테스트 | 없다. `SortingOrderAllocator` 는 씬 없이 검증되는 순수 C# 이라 여기가 첫 자리다 |
-| 테스트 CI | 패키지 정합성 검사만 돈다([Validate](.github/workflows/validate.yml)). 테스트 실행은 Unity 라이선스가 필요해 아직 없다 |
-| 무결성 검사 툴 | 아래 [규약](#규약)이 전부 수동이다. 어겨도 실행해 봐야 안다 |
-| `UIToast` 자동 소멸 | 지속 시간도 타이머도 없다. 지금은 호출부가 직접 `Close` 해야 한다 |
-| 열기 취소 되감기 | `PlayOpenAsync` 도중 취소되면 예외는 나가지만 뷰는 스택에 남는다 |
-| `Close` 를 UnityEvent 에 못 문다 | `Close(UICloseReason reason = Dismissed)` 는 선택 인자가 있어 `UnityAction` 으로 변환되지 않는다. 닫기 버튼을 인스펙터에서 물리려면 뷰마다 인자 없는 래퍼를 하나씩 둬야 한다 |
-| `CloseAllAsync()` 가 화면까지 닫는다 | 인자 없는 버전은 스택 바닥의 `UIScreen` 도 대상이다. 팝업만 정리하려면 `CloseAllAsync<UIPopup>()` 를 써야 하는데 이름이 그 구분을 드러내지 않아, 모르고 쓰면 HUD 가 통째로 사라진다 |
-| 세로 기본값 | `UILayerSettings` 의 기본 레퍼런스 해상도가 1080x1920 이다. 가로 게임은 반드시 덮어써야 하고, 씬에 남는 `UIScreen` 의 `CanvasScaler` 와 어긋나면 배율이 갈라진다 |
 
 ---
 
@@ -199,7 +164,171 @@ BeforeSceneLoad        ─→  UIBootstrap.Create()  →  UIManager.Instance
 
 ---
 
-## 폴더 구조
+## 설치
+
+소비 프로젝트의 `Packages/manifest.json` 에 추가한다.
+
+```json
+"com.frenil.uisystem": "https://github.com/Frenil-client/unity-ui-system.git?path=/Assets/UISystem#v0.1.0"
+```
+
+에디터에서는 **Window ▸ Package Manager ▸ + ▸ Add package from git URL** 에 같은 URL 을 넣어도 된다.
+`?path=/Assets/UISystem` 이 패키지 루트를 가리키므로 이 부분을 빼면 저장소 전체를 받으려다 실패한다.
+
+`#v0.1.0` 이 물린 버전이고, Unity 가 해석한 커밋 해시는 `Packages/packages-lock.json` 에 기록된다.
+그 두 파일을 커밋해 두면 "이 프로젝트가 UI 시스템 어느 버전을 쓰는가"가 이력으로 남는다.
+
+이 저장소의 샘플 프로젝트는 URP 와 Input System 위에서 돌지만, 런타임이 참조하는 것은
+`UnityEngine` 과 `UnityEngine.UI` 뿐이라 소비 프로젝트가 둘을 쓸 필요는 없다.
+
+---
+
+## 설정
+
+패키지에는 런타임만 들어 있다. 뜨려면 에셋 네 가지를 프로젝트에 만들어야 한다.
+이 저장소를 클론한 경우 `Assets/Samples/` 와 `Assets/Resources/UIBootstrap.asset` 이 이미 있으므로
+`SampleLobby` 씬을 열고 바로 Play 하면 되고, 아래는 자기 프로젝트에 붙일 때의 절차다.
+(에디터 메뉴 **UI System ▸ Samples ▸ 샘플 씬과 에셋 생성** 으로 한 벌 만들어 참고해도 된다.)
+
+1. **레이어 설정** — `Create ▸ UI System ▸ UI Layer Settings`
+   기본값이 `Screen / Window / Popup / Overlay / Toast` 다섯 개로 채워져 있다.
+   배열 순서가 `UILayerId` 의 인덱스(0~4)와 **반드시 일치해야 한다.**
+2. **프리팹 표** — `Create ▸ UI System ▸ UI Prefab Table`
+   `TypeName` 에 뷰 타입의 `FullName`(예: `Game.UI.ConfirmPopup`), `Prefab` 에 해당 프리팹을 넣는다.
+3. **UIRoot 프리팹**
+   - 빈 GameObject 에 `RectTransform` + `UIRoot` + `UIRootProvider` 를 붙인다.
+   - `UIRootProvider._settings` 에 1번을, `_container` 에 자기 `RectTransform` 을 꽂는다.
+   - 자식으로 `Canvas` + `GraphicRaycaster` + `Image`(반투명) + `UIDim` 오브젝트를 하나 만들어 `UIRoot._dim` 에 연결한다.
+   - **UIRoot 자체에는 Canvas 를 붙이지 않는다.** 레이어 캔버스는 `UIRootProvider` 가 실행 시 만든다.
+4. **부팅 설정** — `Create ▸ UI System ▸ UI Bootstrap Settings`
+   **반드시 `Assets/Resources/UIBootstrap.asset`** 으로 저장하고 3·1·2번을 각각 꽂는다.
+   (Addressables 가 준비되기 전에 읽혀야 해서 `Resources` 에 둔다.)
+
+---
+
+## 사용법
+
+접근점은 `UIManager.Instance` 하나다. 아래에서 `manager` 는 그것을 받아 둔 지역 변수다.
+
+### 열고 닫기
+
+```csharp
+// 프리팹 표에서 태어나 Popup 레이어에 붙는다
+var popup = await manager.OpenAsync<ConfirmPopup>();
+
+// 닫힘 결과를 기다린다
+var result = await popup.WaitForCloseAsync();
+if (result.IsConfirmed)
+    Purchase();
+
+popup.Close(UICloseReason.Confirmed);      // 뷰가 스스로
+popup.Close();                             // 흘려 닫기(Dismissed)
+await manager.CloseAsync(popup);           // 서비스가
+await manager.CloseAllAsync<UIPopup>();    // 타입 단위로
+await manager.CloseAllAsync();             // UIScreen 을 뺀 전부
+
+// 최상단부터 닫을 수 있는 것을 찾아 하나 닫는다.
+// 못 닫는 모달(BlockClose + Dim)을 만나면 거기서 소비하고 아래로 전파하지 않는다.
+if (!manager.OnBackPressed())
+    ShowQuitConfirm();
+
+manager.IsOpen<InventoryWindow>();
+manager.Find<InventoryWindow>();
+manager.TryGetTop(out var top);
+manager.OpenCount;
+```
+
+`UICloseReason` 은 넷이다 — `Confirmed` / `Cancelled` / `Dismissed`(Dim 클릭·뒤로가기) / `ClosedByService`(CloseAll·씬 전환).
+
+### 뷰 만들기
+
+```csharp
+public sealed class ConfirmPopup : UIPopup
+{
+    [SerializeField] private Button _ok;
+    [SerializeField] private Button _cancel;
+
+    protected override void OnOpened()
+    {
+        _ok.onClick.AddListener(() => Close(UICloseReason.Confirmed));
+        _cancel.onClick.AddListener(() => Close(UICloseReason.Cancelled));
+    }
+
+    // 코드로 물리지 않아도 된다. 버튼의 OnClick 에서 이 뷰를 끌어다
+    // Close() · CloseConfirmed() · CloseCancelled() 를 그대로 고를 수 있다.
+
+    protected override void OnClosing(UIResult result) { }
+
+    // 위에 다른 UI가 덮이거나 걷혔을 때. 가려진 동안 갱신을 멈추는 용도.
+    protected override void OnCoveredChanged(bool covered) { }
+
+    // 연출. 베이스는 null 을 반환하고, null 이면 매니저가 기다리지 않고 즉시 진행한다.
+    // FadeInAsync 는 이 뷰가 직접 구현한 것이다. 시스템이 주는 연출은 아직 없다.
+    protected override Awaitable PlayOpenAsync(CancellationToken token) => FadeInAsync(token);
+}
+```
+
+프리팹은 `UIPrefabTable` 에 `타입 FullName ↔ 프리팹` 으로 등록한다. 경로 문자열도, 리플렉션 조회도 쓰지 않는다.
+
+---
+
+## 다음에 할 것
+
+위에서부터 손댈 순서다.
+마지막 줄은 DefenceGame 이식에서 드러난 것이고, 나머지는 처음부터 비워 둔 자리다.
+
+| 할 일 | 지금 상태 |
+| --- | --- |
+| 테스트 | 없다. `SortingOrderAllocator` 는 씬 없이 검증되는 순수 C# 이라 여기가 첫 자리다 |
+| 무결성 검사 툴 | 아래 [규약](#규약)이 전부 수동이다. 어겨도 실행해 봐야 안다 |
+| `UIToast` 자동 소멸 | 지속 시간도 타이머도 없다. 지금은 호출부가 직접 `Close` 해야 한다 |
+| 세로 기본값 | `UILayerSettings` 의 기본 레퍼런스 해상도가 1080x1920 이다. 가로 게임은 반드시 덮어써야 하고, 씬에 남는 `UIScreen` 의 `CanvasScaler` 와 어긋나면 배율이 갈라진다 |
+
+---
+
+## 확장 포인트
+
+바뀔 것을 전제로 뚫어 둔 자리들이다.
+
+| 갈아 끼울 것 | 방법 |
+| --- | --- |
+| 프리팹 로딩 (Addressables / 번들) | `IUIPrefabProvider` 를 구현한 `ScriptableObject` 를 만들어 `UIBootstrapSettings.PrefabProvider` 에 꽂는다. Addressables 구현은 `ReleaseAll()` 에서 반드시 핸들을 놓아야 한다 |
+| 레이어 구성 | `UILayerSettings` 에서 이름·`BaseSortingOrder`·용량·캔버스 생성 여부를 정의한다 |
+| 루트 배치 | `IUIRootProvider` 를 직접 구현한다 |
+| 연출 | 뷰에서 `PlayOpenAsync` / `PlayCloseAsync` 를 재정의한다 |
+| 조립 방식 | `UIManager` 는 생성자 주입만 쓴다. DI 컨테이너에 직접 등록해도 된다 |
+
+---
+
+## 규약
+
+- `UIScreen` 은 **씬마다 하나**다. 겹친 씬이 각자 Screen 을 들고 오면 경고가 뜬다 — 그런 화면은 `UIWindow` 가 맞다.
+- 씬의 `UIScreen` 은 루트 캔버스이므로 `CanvasScaler` 를 **직접 갖고**, 그 값이 `UILayerSettings` 와 같아야 한다.
+- `UIRoot` 아래로 들어가는 뷰 프리팹은 **서브캔버스**다. `CanvasScaler` 를 붙이면 안 된다.
+- `UIToast` 프리팹에는 `GraphicRaycaster` 를 붙이지 않는다. 레이캐스트 대상에서 빠져야 입력이 통과한다.
+- `UseDim` 인 뷰를 쓰려면 UIRoot 프리팹에 `UIDim` 이 있어야 한다. 없으면 뒤쪽 입력이 그대로 통과하므로 에러로 다룬다.
+- 런타임에 뷰 하위로 캔버스를 추가하지 않는다. 캔버스 목록은 열리는 시점에 고정된다.
+
+---
+
+## 저장소 구조와 개발
+
+### 패키지 경계
+
+`Assets/UISystem/` 이 UPM 패키지 루트다. **소비 프로젝트가 받는 것은 이 폴더뿐이다.**
+
+| | 저장소 | 패키지 |
+| --- | --- | --- |
+| `Assets/UISystem/` — 런타임 · `package.json` · `CHANGELOG.md` | ✓ | ✓ |
+| `Assets/Samples/` — 샘플 씬 · 프리팹 · 테스트 하네스 | ✓ | ✗ |
+| `Assets/Resources/UIBootstrap.asset` — 이 프로젝트의 부팅 설정 | ✓ | ✗ |
+| `docs/` — 구조도 | ✓ | ✗ |
+
+git URL 패키지는 `?path=` 폴더를 통째로 복사하는 방식이라 **파일 단위 제외 수단이 없다.**
+그래서 전달하지 않을 것은 경계 밖에 둔다. 샘플이 `Assets/UISystem/` 이 아니라 `Assets/Samples/` 에 있는 이유다.
+클론하면 샘플과 부팅 설정이 함께 딸려오므로 `SampleLobby` 씬을 열고 바로 Play 할 수 있다.
+
+### 폴더 구조
 
 ```
 Assets/
@@ -234,147 +363,30 @@ Assets/
 `Assembly-CSharp` 의 자동 참조에 기대지 않으므로, 소비 프로젝트가 패키지를 물었을 때 겪을
 어셈블리 참조 상황이 이 저장소 안에서 그대로 재현된다.
 
----
+### CI
 
-## 설치
+Unity 라이선스도 에디터도 쓰지 않는다. 순수 파일 검사라 30초 안에 끝난다.
 
-**요구사항** Unity 6000.3 이상. 패키지 의존은 `com.unity.ugui` 2.0.0 하나뿐이다.
+| 워크플로 | 시점 | 하는 일 |
+| --- | --- | --- |
+| [Validate](.github/workflows/validate.yml) | push · PR | 패키지 정합성 검사, 소비 프로젝트가 받는 파일 목록을 Job Summary 에 기록 |
+| [Release](.github/workflows/release.yml) | `v*` 태그 | 정합성 검사 → 태그와 `package.json` 버전 대조 → CHANGELOG 에서 노트 추출 → 릴리스 생성 |
 
-소비 프로젝트의 `Packages/manifest.json` 에 추가한다.
+검사 본체는 [`validate-package.sh`](.github/scripts/validate-package.sh) 하나이고 로컬에서도 같은 것을 돌린다.
 
-```json
-"com.frenil.uisystem": "https://github.com/Frenil-client/unity-ui-system.git?path=/Assets/UISystem#v0.1.0"
+```bash
+bash .github/scripts/validate-package.sh
 ```
 
-에디터에서는 **Window ▸ Package Manager ▸ + ▸ Add package from git URL** 에 같은 URL 을 넣어도 된다.
-`?path=/Assets/UISystem` 이 패키지 루트를 가리키므로 이 부분을 빼면 저장소 전체를 받으려다 실패한다.
+- **패키지 경계** — 경계 안에 씬·프리팹·샘플·Resources 가 섞였는지. 위 규칙이 지켜지는지를 기계가 본다
+- **meta 정합성** — 모든 에셋·폴더에 `.meta` 가 있는지, 짝 잃은 `.meta` 가 없는지
+- **`package.json`** — 필수 필드, `name` 형식, `version` 이 유의적 버전인지
+- **CHANGELOG** — 현재 `version` 에 해당하는 항목이 있는지
+- **asmdef** — JSON 문법
 
-`#v0.1.0` 이 물린 버전이고, Unity 가 해석한 커밋 해시는 `Packages/packages-lock.json` 에 기록된다.
-그 두 파일을 커밋해 두면 "이 프로젝트가 UI 시스템 어느 버전을 쓰는가"가 이력으로 남는다.
+meta 검사는 클론한 상태를 기준으로 돈다. git 이 빈 폴더를 추적하지 않아
+**로컬에서는 보이지 않고 CI 에서만 드러나는 짝 잃은 `.meta`** 가 실제로 여기서 잡혔다.
 
----
+릴리스는 태그와 `package.json` 버전이 어긋나면 만들어지지 않는다.
+버전을 올리지 않고 태그만 찍는 사고가 UPM 저장소에서 가장 흔해서 여기서 막는다.
 
-## 설정
-
-패키지에는 런타임만 들어 있다. 뜨려면 에셋 네 가지를 프로젝트에 만들어야 한다.
-이 저장소를 클론한 경우 `Assets/Samples/` 와 `Assets/Resources/UIBootstrap.asset` 이 이미 있으므로
-`SampleLobby` 씬을 열고 바로 Play 하면 되고, 아래는 자기 프로젝트에 붙일 때의 절차다.
-(에디터 메뉴 **UI System ▸ Samples ▸ 샘플 씬과 에셋 생성** 으로 한 벌 만들어 참고해도 된다.)
-
-1. **레이어 설정** — `Create ▸ UI System ▸ UI Layer Settings`
-   기본값이 `Screen / Window / Popup / Overlay / Toast` 다섯 개로 채워져 있다.
-   배열 순서가 `UILayerId` 의 인덱스(0~4)와 **반드시 일치해야 한다.**
-2. **프리팹 표** — `Create ▸ UI System ▸ UI Prefab Table`
-   `TypeName` 에 뷰 타입의 `FullName`(예: `Game.UI.ConfirmPopup`), `Prefab` 에 해당 프리팹을 넣는다.
-3. **UIRoot 프리팹**
-   - 빈 GameObject 에 `RectTransform` + `UIRoot` + `UIRootProvider` 를 붙인다.
-   - `UIRootProvider._settings` 에 1번을, `_container` 에 자기 `RectTransform` 을 꽂는다.
-   - 자식으로 `Canvas` + `GraphicRaycaster` + `Image`(반투명) + `UIDim` 오브젝트를 하나 만들어 `UIRoot._dim` 에 연결한다.
-   - **UIRoot 자체에는 Canvas 를 붙이지 않는다.** 레이어 캔버스는 `UIRootProvider` 가 실행 시 만든다.
-4. **부팅 설정** — `Create ▸ UI System ▸ UI Bootstrap Settings`
-   **반드시 `Assets/Resources/UIBootstrap.asset`** 으로 저장하고 3·1·2번을 각각 꽂는다.
-   (Addressables 가 준비되기 전에 읽혀야 해서 `Resources` 에 둔다.)
-
----
-
-## 사용법
-
-접근점은 `UIManager.Instance` 하나다. 아래 예제에서 `manager` 로 줄여 쓴 것도 그것을 받아 둔 지역 변수다.
-
-### 열기
-
-```csharp
-// 프리팹 표에서 태어나 Popup 레이어에 붙는다
-var popup = await UIManager.Instance.OpenAsync<ConfirmPopup>();
-```
-
-### 결과를 기다리기
-
-```csharp
-var popup = await UIManager.Instance.OpenAsync<ConfirmPopup>();
-var result = await popup.WaitForCloseAsync();
-
-if (result.IsConfirmed)
-    Purchase();
-```
-
-`UICloseReason` 은 넷이다 — `Confirmed` / `Cancelled` / `Dismissed`(Dim 클릭·뒤로가기) / `ClosedByService`(CloseAll·씬 전환).
-
-### 닫기
-
-```csharp
-popup.Close(UICloseReason.Confirmed);      // 뷰가 스스로
-await manager.CloseAsync(popup);           // 서비스가
-await manager.CloseAllAsync<UIPopup>();    // 타입 단위로
-await manager.CloseAllAsync();             // 전부
-```
-
-### 뒤로가기
-
-```csharp
-// 최상단부터 닫을 수 있는 것을 찾아 하나 닫는다.
-// 못 닫는 모달(BlockClose + Dim)을 만나면 거기서 소비하고 아래로 전파하지 않는다.
-if (!UIManager.Instance.OnBackPressed())
-    ShowQuitConfirm();
-```
-
-### 조회
-
-```csharp
-manager.IsOpen<InventoryWindow>();
-manager.Find<InventoryWindow>();
-manager.TryGetTop(out var top);
-manager.OpenCount;
-```
-
-### 뷰 만들기
-
-```csharp
-public sealed class ConfirmPopup : UIPopup
-{
-    [SerializeField] private Button _ok;
-    [SerializeField] private Button _cancel;
-
-    protected override void OnOpened()
-    {
-        _ok.onClick.AddListener(() => Close(UICloseReason.Confirmed));
-        _cancel.onClick.AddListener(() => Close(UICloseReason.Cancelled));
-    }
-
-    protected override void OnClosing(UIResult result) { }
-
-    // 위에 다른 UI가 덮이거나 걷혔을 때. 가려진 동안 갱신을 멈추는 용도.
-    protected override void OnCoveredChanged(bool covered) { }
-
-    // 연출. 베이스는 null 을 반환하고, null 이면 매니저가 기다리지 않고 즉시 진행한다.
-    // FadeInAsync 는 이 뷰가 직접 구현한 것이다. 시스템이 주는 연출은 아직 없다.
-    protected override Awaitable PlayOpenAsync(CancellationToken token) => FadeInAsync(token);
-}
-```
-
-프리팹은 `UIPrefabTable` 에 `타입 FullName ↔ 프리팹` 으로 등록한다. 경로 문자열도, 리플렉션 조회도 쓰지 않는다.
-
----
-
-## 확장 포인트
-
-바뀔 것을 전제로 뚫어 둔 자리들이다.
-
-| 갈아 끼울 것 | 방법 |
-| --- | --- |
-| 프리팹 로딩 (Addressables / 번들) | `IUIPrefabProvider` 를 구현한 `ScriptableObject` 를 만들어 `UIBootstrapSettings.PrefabProvider` 에 꽂는다. Addressables 구현은 `ReleaseAll()` 에서 반드시 핸들을 놓아야 한다 |
-| 레이어 구성 | `UILayerSettings` 에서 이름·`BaseSortingOrder`·용량·캔버스 생성 여부를 정의한다 |
-| 루트 배치 | `IUIRootProvider` 를 직접 구현한다 |
-| 연출 | 뷰에서 `PlayOpenAsync` / `PlayCloseAsync` 를 재정의한다 |
-| 조립 방식 | `UIManager` 는 생성자 주입만 쓴다. DI 컨테이너에 직접 등록해도 된다 |
-
----
-
-## 규약
-
-- `UIScreen` 은 **씬마다 하나**다. 겹친 씬이 각자 Screen 을 들고 오면 경고가 뜬다 — 그런 화면은 `UIWindow` 가 맞다.
-- 씬의 `UIScreen` 은 루트 캔버스이므로 `CanvasScaler` 를 **직접 갖고**, 그 값이 `UILayerSettings` 와 같아야 한다.
-- `UIRoot` 아래로 들어가는 뷰 프리팹은 **서브캔버스**다. `CanvasScaler` 를 붙이면 안 된다.
-- `UIToast` 프리팹에는 `GraphicRaycaster` 를 붙이지 않는다. 레이캐스트 대상에서 빠져야 입력이 통과한다.
-- `UseDim` 인 뷰를 쓰려면 UIRoot 프리팹에 `UIDim` 이 있어야 한다. 없으면 뒤쪽 입력이 그대로 통과하므로 에러로 다룬다.
-- 런타임에 뷰 하위로 캔버스를 추가하지 않는다. 캔버스 목록은 열리는 시점에 고정된다.
