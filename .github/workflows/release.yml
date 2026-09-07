@@ -1,0 +1,58 @@
+name: Release
+
+# v* 태그를 밀면 돈다. package.json 버전과 태그가 어긋나면 릴리스를 만들지 않는다.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: GitHub 릴리스 생성
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 패키지 정합성
+        run: bash .github/scripts/validate-package.sh
+
+      # 태그를 찍고 package.json 올리는 것을 잊는 사고가 가장 흔하다. 여기서 막는다.
+      - name: 태그와 package.json 버전 일치
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          PKG=$(sed -n 's/^  "version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' Assets/UISystem/package.json)
+          echo "태그 $TAG / package.json $PKG"
+          if [ "$TAG" != "$PKG" ]; then
+            echo "::error::태그 v$TAG 와 package.json 의 $PKG 가 다르다"
+            exit 1
+          fi
+
+      - name: CHANGELOG 에서 릴리스 노트 추출
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          # 정규식 대신 문자열 비교를 쓴다. 셸을 거치며 이스케이프가 깨지지 않는다.
+          awk -v hdr="## [$VERSION]" '
+            index($0, hdr) == 1      { found = 1; next }
+            found && index($0, "## [") == 1 { exit }
+            found                    { print }
+          ' Assets/UISystem/CHANGELOG.md > NOTES.md
+          if [ ! -s NOTES.md ]; then
+            echo "::error::CHANGELOG 에 [$VERSION] 항목이 없다"
+            exit 1
+          fi
+          {
+            echo
+            echo "## 설치"
+            echo
+            echo '```'
+            echo "https://github.com/${GITHUB_REPOSITORY}.git?path=/Assets/UISystem#${GITHUB_REF_NAME}"
+            echo '```'
+          } >> NOTES.md
+          cat NOTES.md
+
+      - name: 릴리스 생성
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file NOTES.md

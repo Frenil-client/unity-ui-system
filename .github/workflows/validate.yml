@@ -1,0 +1,34 @@
+name: Validate
+
+# Unity 라이선스도 에디터도 쓰지 않는다. 순수 파일 검사라 30초 안에 끝난다.
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  package:
+    name: 패키지 정합성
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 검증
+        run: bash .github/scripts/validate-package.sh
+
+  boundary:
+    name: 패키지에 나가는 파일 목록
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # 소비 프로젝트가 실제로 받는 것을 로그에 남긴다.
+      # 의도치 않은 파일이 경계 안으로 들어오면 diff 로 바로 보인다.
+      - name: 소비 프로젝트가 받는 파일
+        run: |
+          echo "### 패키지에 포함되는 파일" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          git ls-files Assets/UISystem >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "합계 $(git ls-files Assets/UISystem | wc -l) 개" >> "$GITHUB_STEP_SUMMARY"
