@@ -4,6 +4,7 @@
   "displayName": "UI Stack System",
   "description": "Unity 6 (uGUI) 용 UI 스택 관리 시스템. 레이어 캔버스, 정렬 순서 자동 배정, 씬 소유권 기반 수명 관리를 묶어 게임 코드가 UIManager.Instance.OpenAsync<T>() 한 줄만 알면 되도록 만든 런타임이다.",
   "unity": "6000.3",
+  "license": "MIT",
   "author": {
     "name": "frenil",
     "url": "https://github.com/Frenil-client"

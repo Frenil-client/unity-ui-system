@@ -1,5 +1,10 @@
 # Unity UI Stack System
 
+[![Validate](https://github.com/Frenil-client/unity-ui-system/actions/workflows/validate.yml/badge.svg)](https://github.com/Frenil-client/unity-ui-system/actions/workflows/validate.yml)
+[![Unity 6000.3+](https://img.shields.io/badge/Unity-6000.3%2B-black?logo=unity&logoColor=white)](https://unity.com/releases/editor/archive)
+[![version](https://img.shields.io/github/v/tag/Frenil-client/unity-ui-system?label=version&color=blue)](https://github.com/Frenil-client/unity-ui-system/tags)
+[![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
 Unity 6 (uGUI) 용 UI 스택 관리 시스템.
 레이어 캔버스 · 정렬 순서 자동 배정 · 씬 소유권 기반 수명 관리를 한 덩어리로 묶어,
 게임 코드가 `UIManager.Instance.OpenAsync<T>()` 한 줄만 알면 되도록 만든 런타임이다.
@@ -382,6 +387,7 @@ bash .github/scripts/validate-package.sh
 - **meta 정합성** — 모든 에셋·폴더에 `.meta` 가 있는지, 짝 잃은 `.meta` 가 없는지
 - **`package.json`** — 필수 필드, `name` 형식, `version` 이 유의적 버전인지
 - **CHANGELOG** — 현재 `version` 에 해당하는 항목이 있는지
+- **라이선스** — `package.json` 의 `license` 필드와 저장소 루트 `LICENSE` 가 둘 다 있는지
 - **asmdef** — JSON 문법
 
 meta 검사는 클론한 상태를 기준으로 돈다. git 이 빈 폴더를 추적하지 않아
@@ -390,3 +396,12 @@ meta 검사는 클론한 상태를 기준으로 돈다. git 이 빈 폴더를 �
 릴리스는 태그와 `package.json` 버전이 어긋나면 만들어지지 않는다.
 버전을 올리지 않고 태그만 찍는 사고가 UPM 저장소에서 가장 흔해서 여기서 막는다.
 
+
+---
+
+## 라이선스
+
+[MIT](LICENSE). 저작권 표시만 남기면 상업적 사용·수정·재배포 모두 자유롭다.
+
+라이선스 본문은 저장소 루트의 `LICENSE` 하나에 두고, 패키지에는 `package.json` 의
+`"license": "MIT"` 필드로만 표시한다. UniTask, NaughtyAttributes 등 다른 UPM 저장소와 같은 방식이다.

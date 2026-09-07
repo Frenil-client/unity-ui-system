@@ -50,6 +50,23 @@ else
   fail "version 이 유의적 버전이 아니다: $PKG_VERSION"
 fi
 
+# -------------------------------------------------------------------- 라이선스
+# 관행대로 본문은 저장소 루트의 LICENSE 하나, 패키지에는 SPDX 식별자만 둔다.
+section "라이선스"
+
+PKG_LICENSE=$(pkg_field license)
+if [ -n "$PKG_LICENSE" ]; then
+  pass "package.json license = $PKG_LICENSE"
+else
+  fail "package.json 에 license 필드가 없다"
+fi
+
+if [ -f LICENSE ]; then
+  pass "저장소 루트 LICENSE"
+else
+  fail "저장소 루트에 LICENSE 파일이 없다"
+fi
+
 # ------------------------------------------------------------------ CHANGELOG
 section "CHANGELOG"
 
