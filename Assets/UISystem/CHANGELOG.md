@@ -5,24 +5,32 @@
 
 ## [Unreleased]
 
+아직 없음. 다음에 손댈 순서는 [README 의 "다음에 할 것"](../../README.md#다음에-할-것) 을 따른다.
+
+## [0.2.0] - 2026-09-07
+
+DefenceGame 이식에서 드러난 마찰을 걷어낸 판. 실사용에서만 보이던 것들이라 API 표면이 조금 바뀐다.
+
+### 추가
+
+- `UIBase` 에 무인자 닫기 진입점 `Close()` · `CloseConfirmed()` · `CloseCancelled()`.
+  인스펙터의 UnityEvent 는 선택 인자가 있는 메서드도, 열거형을 받는 메서드도 목록에 올리지 않는다.
+  이제 버튼 `OnClick` 에서 뷰를 끌어다 셋 중 하나를 바로 고를 수 있다.
+- MIT 라이선스. `package.json` 에 `license` 필드가 생겼고 본문은 저장소 루트 `LICENSE` 에 있다.
+
+### 변경
+
+- **`CloseAllAsync()` 가 `UIScreen` 을 남긴다.** 이전에는 스택 바닥의 화면까지 닫아서
+  팝업만 정리하려다 HUD 가 통째로 사라졌다. 화면까지 걷어내는 것은 씬 언로드와 `Reset()` 의 일이다.
+  화면을 명시적으로 닫으려면 `CloseAllAsync<UIScreen>()` 을 쓴다.
+- **`Close(UICloseReason)` 에서 기본값이 빠졌다.** 인자를 주던 기존 호출부는 그대로 동작하고,
+  인자 없이 부르던 곳은 새 `Close()` 로 해석된다.
+
 ### 수정
 
 - **열기가 도중에 엎어지면 스택을 되감는다.** `PlayOpenAsync` 연출 중 취소되거나 예외가 나면
   예외만 전파되고 뷰는 스택과 정렬 구간을 계속 붙잡고 있었다. 화면에 없는 뷰가 레이어 용량을
   점유하고 가림 계산에도 끼어들던 문제다. 이제 열린 적 없던 상태로 되돌린 뒤 예외를 다시 던진다.
-- **`Close` 를 인스펙터의 UnityEvent 에 물릴 수 있다.** `Close(UICloseReason reason = Dismissed)` 는
-  선택 인자 때문에 `UnityAction` 목록에 오르지 않아, 닫기 버튼마다 뷰에 인자 없는 래퍼를 둬야 했다.
-  기본값을 없애고 무인자 진입점 `Close()` · `CloseConfirmed()` · `CloseCancelled()` 를 `UIBase` 에 뒀다.
-
-### 변경
-
-- `CloseAllAsync()` 가 `UIScreen` 을 남긴다. 이전에는 스택 바닥의 화면까지 닫아서
-  팝업만 정리하려다 HUD 가 통째로 사라졌다. 화면까지 걷어내는 것은 씬 언로드와 `Reset()` 의 일이다.
-  화면을 명시적으로 닫으려면 `CloseAllAsync<UIScreen>()` 을 쓴다.
-- `Close(UICloseReason)` 에서 기본값이 빠졌다. 인자를 주던 기존 호출부는 그대로 동작하고,
-  인자 없이 부르던 곳은 새 `Close()` 로 해석된다.
-
-다음에 손댈 순서는 [README 의 "다음에 할 것"](../../README.md#다음에-할-것) 을 따른다.
 
 ## [0.1.0] - 2026-09-07
 
@@ -82,5 +90,6 @@ UI 스택 시스템의 기초. 스택 관리, 레이어 분리, 정렬 순서 �
 - `UIToast` 에 자동 소멸이 없다. 호출부가 직접 `Close` 해야 한다.
 - `PlayOpenAsync` 도중 취소되면 예외는 나가지만 뷰는 스택에 남는다.
 
-[Unreleased]: https://github.com/Frenil-client/unity-ui-system/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/Frenil-client/unity-ui-system/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/Frenil-client/unity-ui-system/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Frenil-client/unity-ui-system/releases/tag/v0.1.0

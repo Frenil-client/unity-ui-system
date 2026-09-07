@@ -174,13 +174,13 @@ BeforeSceneLoad        ─→  UIBootstrap.Create()  →  UIManager.Instance
 소비 프로젝트의 `Packages/manifest.json` 에 추가한다.
 
 ```json
-"com.frenil.uisystem": "https://github.com/Frenil-client/unity-ui-system.git?path=/Assets/UISystem#v0.1.0"
+"com.frenil.uisystem": "https://github.com/Frenil-client/unity-ui-system.git?path=/Assets/UISystem#v0.2.0"
 ```
 
 에디터에서는 **Window ▸ Package Manager ▸ + ▸ Add package from git URL** 에 같은 URL 을 넣어도 된다.
 `?path=/Assets/UISystem` 이 패키지 루트를 가리키므로 이 부분을 빼면 저장소 전체를 받으려다 실패한다.
 
-`#v0.1.0` 이 물린 버전이고, Unity 가 해석한 커밋 해시는 `Packages/packages-lock.json` 에 기록된다.
+`#v0.2.0` 이 물린 버전이고, Unity 가 해석한 커밋 해시는 `Packages/packages-lock.json` 에 기록된다.
 그 두 파일을 커밋해 두면 "이 프로젝트가 UI 시스템 어느 버전을 쓰는가"가 이력으로 남는다.
 
 이 저장소의 샘플 프로젝트는 URP 와 Input System 위에서 돌지만, 런타임이 참조하는 것은
